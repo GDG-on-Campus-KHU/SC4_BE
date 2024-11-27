@@ -15,6 +15,18 @@ type DBConfig struct {
 	DBName   string
 }
 
+type Config struct {
+	DB        *DBConfig
+	JWTSecret []byte
+}
+
+func GetConfig() *Config {
+	return &Config{
+		DB:        GetDBConfig(),
+		JWTSecret: []byte(getEnv("JWT_SECRET", "2e5c28b16d282d501dcd65ac9132e9f8d053de116f14f411eb5bba846b90278b")),
+	}
+}
+
 func GetDBConfig() *DBConfig {
 	err := godotenv.Load()
 	if err != nil {
@@ -22,7 +34,7 @@ func GetDBConfig() *DBConfig {
 	}
 
 	return &DBConfig{
-		Host:     getEnv("DB_HOST", "localhost"), //두 번째 인자는 기본값
+		Host:     getEnv("DB_HOST", "localhost"),
 		Port:     getEnv("DB_PORT", "3306"),
 		User:     getEnv("DB_USER", "root"),
 		Password: getEnv("DB_PASSWORD", ""),
@@ -30,7 +42,6 @@ func GetDBConfig() *DBConfig {
 	}
 }
 
-// 환경변수를 가져오는 헬퍼 함수
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
