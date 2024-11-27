@@ -32,9 +32,9 @@ func main() {
 	//api
 	r.HandleFunc("/api/login", userHandler.LoginUser).Methods("POST")
 	r.HandleFunc("/api/register", userHandler.CreateUser).Methods("POST")
-	r.HandleFunc("/api/user/{id}", userHandler.GetUser).Methods("GET")
-	r.HandleFunc("/api/user", userHandler.UpdateUser).Methods("PUT")
-	r.HandleFunc("/api/user/{id}", userHandler.DeleteUser).Methods("DELETE")
+
+	protected := r.PathPrefix("/api/protected").Subrouter()
+	protected.Use(handlers.AuthMiddleware)
 
 	r.HandleFunc("/api/v1/user", suppliesHandler.GetSupplies).Methods("GET")
 	r.HandleFunc("/api/v1/supplies", suppliesHandler.SaveSupplies).Methods("POST")
