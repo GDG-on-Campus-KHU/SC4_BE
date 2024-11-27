@@ -10,3 +10,8 @@ type LoginData struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 }
+
+type UserData struct {
+	Username string          `json:"username"`
+	Supplies map[string]bool `json:"supplies"`
+}
