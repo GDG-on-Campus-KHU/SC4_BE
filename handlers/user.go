@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/GDG-on-Campus-KHU/SC4_BE/auth"
 	"github.com/GDG-on-Campus-KHU/SC4_BE/models"
 	"github.com/GDG-on-Campus-KHU/SC4_BE/services"
 	"github.com/gorilla/mux"
@@ -31,16 +32,16 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if loginData.Email == "" || loginData.Password == "" {
+	if loginData.Name == "" || loginData.Password == "" {
 		http.Error(w, "Email and Password are required", http.StatusBadRequest)
 		return
 	}
 
-	logData, err := json.MarshalIndent(loginData, "", "  ") // JSON 변환
-	if err != nil {
-		log.Fatalf("Failed to marshal loginData: %v", err)
-	}
-	log.Println("Decoded loginData:", string(logData))
+	// logData, err := json.MarshalIndent(loginData, "", "  ") // JSON 변환
+	// if err != nil {
+	// 	log.Fatalf("Failed to marshal loginData: %v", err)
+	// }
+	// log.Println("Decoded loginData:", string(logData))
 
 	user, err := h.service.LoginUser(&loginData)
 	if err != nil {
@@ -48,12 +49,25 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// JWT 생성
+	token, err := auth.GenerateJWT(user.ID, user.Name)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(user); err != nil {
+	err = json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  200,
+		"message": "로그인 성공",
+		"data": map[string]string{
+			"token": token,
+		},
+	})
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Println("Success")
 }
 
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -63,8 +77,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(user.Name)
-	log.Println(user.PhoneNum)
-	if user.Name == "" || user.Email == "" || user.Password == "" {
+	if user.Name == "" || user.Password == "" {
 		http.Error(w, "필수 정보를 입력해주세요", http.StatusBadRequest)
 		return
 	}
@@ -75,7 +88,12 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(user); err != nil {
+	err := json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  200,
+		"message": "회원가입 성공",
+		"data":    struct{}{},
+	})
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +128,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.ID == 0 || user.Name == "" || user.Email == "" {
+	if user.ID == 0 || user.Name == "" {
 		http.Error(w, "User ID, Name, and Email are required", http.StatusBadRequest)
 		return
 	}

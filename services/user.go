@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/GDG-on-Campus-KHU/SC4_BE/db"
 	"github.com/GDG-on-Campus-KHU/SC4_BE/models"
@@ -28,19 +29,13 @@ func (s *UserService) LoginUser(l *models.LoginData) (*models.User, error) {
 	var user models.User
 	var password string
 	err := db.DB.QueryRow(`
-         SELECT u.*, ur.rest_id
+         SELECT u.id, u.password, u.username
         FROM users u
-        LEFT JOIN gdgdb.user_rest ur on u.id = ur.user_id
-        WHERE email = ?
-		`, l.Email).Scan(
+        WHERE username = ?
+		`, l.Name).Scan(
 		&user.ID,
-		&user.Email,
 		&password,
-		&user.PhoneNum,
 		&user.Name,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-		&user.RestID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("존재하지 않는 회원입니다.")
@@ -49,13 +44,13 @@ func (s *UserService) LoginUser(l *models.LoginData) (*models.User, error) {
 	if !CheckPasswordHash(l.Password, password) {
 		return nil, fmt.Errorf("invalid password")
 	}
-
+	log.Println("로그인 성공")
 	return &user, nil
 }
 
 func (s *UserService) CreateUser(u *models.User) error {
 	var existingID int64
-	err := db.DB.QueryRow("SELECT id FROM users WHERE email = ?", u.Email).Scan(&existingID)
+	err := db.DB.QueryRow("SELECT id FROM users WHERE username = ?", u.Name).Scan(&existingID)
 	if err == nil || existingID != 0 {
 		return fmt.Errorf("email already exists")
 	}
@@ -67,23 +62,19 @@ func (s *UserService) CreateUser(u *models.User) error {
 	u.Password = hashedPassword
 
 	result, err := db.DB.Exec(`
-        INSERT INTO users (email, password, phone_num, name)  
-        VALUES (?, ?, ?, ?)`,
-		u.Email, u.Password, u.PhoneNum, u.Name)
+        INSERT INTO users (username, password)  
+        VALUES (?, ?)`,
+		u.Name, u.Password)
 	if err != nil {
 		return err
 	}
 	id, _ := result.LastInsertId()
 	u.ID = id
 
-	err = db.DB.QueryRow("SELECT id, email, name, phone_num,created_at, updated_at FROM users WHERE id = ?", id).
+	err = db.DB.QueryRow("SELECT id, username FROM users WHERE id = ?", id).
 		Scan(
 			&u.ID,
-			&u.Email,
 			&u.Name,
-			&u.PhoneNum,
-			&u.CreatedAt,
-			&u.UpdatedAt,
 		)
 	if err != nil {
 		return err
@@ -97,11 +88,7 @@ func (s *UserService) GetUser(id int64) (*models.User, error) {
 	err := db.DB.QueryRow("SELECT id, email, name, phone_num,created_at, updated_at FROM users WHERE id = ?", id).
 		Scan(
 			&user.ID,
-			&user.Email,
 			&user.Name,
-			&user.PhoneNum,
-			&user.CreatedAt,
-			&user.UpdatedAt,
 		)
 	if err != nil {
 		return nil, err
@@ -112,9 +99,9 @@ func (s *UserService) GetUser(id int64) (*models.User, error) {
 func (s *UserService) UpdateUser(u *models.User) error {
 	_, err := db.DB.Exec(`
 		UPDATE users 
-		SET name = ?, email = ?, phone_num = ?
+		SET name = ?
 		WHERE id = ?`,
-		u.Name, u.Email, u.PhoneNum, u.ID)
+		u.Name, u.ID)
 	if err != nil {
 		return err
 	}
