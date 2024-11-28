@@ -42,7 +42,7 @@ func main() {
 	//JWT 적용후
 	protected := r.PathPrefix("/api/v1").Subrouter()
 	protected.Use(handlers.AuthMiddleware)
-	protected.Use(CORSMiddleware(allowedOrigins))
+	protected.Use(handlers.CORSMiddleware(allowedOrigins))
 
 	protected.HandleFunc("/user", suppliesHandler.GetSupplies).Methods("GET")
 	protected.HandleFunc("/supplies", suppliesHandler.SaveSupplies).Methods("POST")
