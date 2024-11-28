@@ -30,7 +30,10 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// 사용자 ID를 컨텍스트에 추가
+		//log.Printf("User ID: %d", claims.UserID)
 		ctx := context.WithValue(r.Context(), "userID", claims.UserID)
+		ctx = context.WithValue(ctx, "username", claims.Name)
+		//log.Printf("Context:", ctx)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

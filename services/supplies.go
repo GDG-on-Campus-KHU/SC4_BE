@@ -15,7 +15,7 @@ func NewSuppliesService() *SuppliesService {
 	return &SuppliesService{}
 }
 
-func (s *SuppliesService) GetUserSupplies(userID int) (map[string]bool, error) {
+func (s *SuppliesService) GetUserSupplies(userID int64) (map[string]bool, error) {
 	supplies := make(map[string]bool)
 
 	query := `
@@ -47,7 +47,7 @@ func (s *SuppliesService) GetUserSupplies(userID int) (map[string]bool, error) {
 	return supplies, nil
 }
 
-func (s *SuppliesService) SaveUserSupplies(userID int, supplies map[string]bool) error {
+func (s *SuppliesService) SaveUserSupplies(userID int64, supplies map[string]bool) error {
 	tx, err := db.DB.Begin()
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (s *SuppliesService) SaveUserSupplies(userID int, supplies map[string]bool)
 	return tx.Commit()
 }
 
-func (s *SuppliesService) UpdateUserSupplies(userID int, supplies map[string]bool) error {
+func (s *SuppliesService) UpdateUserSupplies(userID int64, supplies map[string]bool) error {
 	tx, err := db.DB.Begin()
 	if err != nil {
 		return err

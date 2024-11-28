@@ -49,7 +49,7 @@ func (s *UserService) LoginUser(l *models.LoginData) (*models.User, error) {
 }
 
 func (s *UserService) CreateUser(u *models.User) error {
-	var existingID int64
+	var existingID int
 	err := db.DB.QueryRow("SELECT id FROM users WHERE username = ?", u.Name).Scan(&existingID)
 	if err == nil || existingID != 0 {
 		return fmt.Errorf("email already exists")

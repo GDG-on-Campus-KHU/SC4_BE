@@ -2,13 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
-	"strings"
 
 	"github.com/GDG-on-Campus-KHU/SC4_BE/config"
 	"github.com/GDG-on-Campus-KHU/SC4_BE/models"
 	"github.com/GDG-on-Campus-KHU/SC4_BE/services"
-	"github.com/golang-jwt/jwt"
 )
 
 type SuppliesHandler struct {
@@ -24,27 +23,19 @@ func NewSuppliesHandler(ss *services.SuppliesService, cfg *config.Config) *Suppl
 }
 
 func (h *SuppliesHandler) GetSupplies(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 토큰입니다.")
+	userID, ok := r.Context().Value("userID").(int64)
+
+	if !ok {
+		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 사용자입니다.")
 		return
 	}
-
-	tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
-
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return h.config.JWTSecret, nil
-	})
-
-	if err != nil || !token.Valid {
-		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 토큰입니다.")
+	log.Println("userID:", userID)
+	username, ok := r.Context().Value("username").(string)
+	if !ok {
+		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 사용자입니다.")
 		return
 	}
-
-	userID := int(claims["user_id"].(float64))
-	username := claims["username"].(string)
-
+	log.Println("username:", username)
 	supplies, err := h.suppliesService.GetUserSupplies(userID)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusInternalServerError, "물품 조회에 실패하였습니다.")
@@ -81,33 +72,19 @@ type SuppliesRequest struct {
 }
 
 func (h *SuppliesHandler) SaveSupplies(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 토큰입니다.")
+	userID, ok := r.Context().Value("userID").(int64)
+
+	if !ok {
+		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 사용자입니다.")
 		return
 	}
-
-	tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
-
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return h.config.JWTSecret, nil
-	})
-
-	if err != nil || !token.Valid {
-		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 토큰입니다.")
-		return
-	}
-
-	userID := int(claims["user_id"].(float64))
-
 	var req SuppliesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, "잘못된 요청 형식입니다.")
 		return
 	}
 
-	if err = h.suppliesService.SaveUserSupplies(userID, req.Supplies); err != nil {
+	if err := h.suppliesService.SaveUserSupplies(userID, req.Supplies); err != nil {
 		h.sendErrorResponse(w, http.StatusInternalServerError, "물품 저장에 실패했습니다.")
 		return
 	}
@@ -122,25 +99,12 @@ func (h *SuppliesHandler) SaveSupplies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SuppliesHandler) UpdateSupplies(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 토큰입니다.")
+	userID, ok := r.Context().Value("userID").(int64)
+
+	if !ok {
+		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 사용자입니다.")
 		return
 	}
-
-	tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
-
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return h.config.JWTSecret, nil
-	})
-
-	if err != nil || !token.Valid {
-		h.sendErrorResponse(w, http.StatusUnauthorized, "유효하지 않은 토큰입니다.")
-		return
-	}
-
-	userID := int(claims["user_id"].(float64))
 
 	var req SuppliesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -148,7 +112,7 @@ func (h *SuppliesHandler) UpdateSupplies(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err = h.suppliesService.UpdateUserSupplies(userID, req.Supplies); err != nil {
+	if err := h.suppliesService.UpdateUserSupplies(userID, req.Supplies); err != nil {
 		if err == services.ErrNoExistingSupplies {
 			h.sendErrorResponse(w, http.StatusNotFound, "수정할 물품이 존재하지 않습니다.")
 			return
