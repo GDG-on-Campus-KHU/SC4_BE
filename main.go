@@ -21,6 +21,12 @@ func main() {
 	}
 	defer db.DB.Close()
 
+	// CORS 허용 출처
+	allowedOrigins := []string{
+		"https://packmate-three.vercel.app",
+		"http://localhost:5173",
+	}
+
 	r := mux.NewRouter()
 
 	userService := &services.UserService{}
@@ -36,6 +42,7 @@ func main() {
 	//JWT 적용후
 	protected := r.PathPrefix("/api/v1").Subrouter()
 	protected.Use(handlers.AuthMiddleware)
+	protected.Use(CORSMiddleware(allowedOrigins))
 
 	protected.HandleFunc("/user", suppliesHandler.GetSupplies).Methods("GET")
 	protected.HandleFunc("/supplies", suppliesHandler.SaveSupplies).Methods("POST")
@@ -45,6 +52,6 @@ func main() {
 	r.HandleFunc("/api/v1/supplies", suppliesHandler.SaveSupplies).Methods("POST")
 	r.HandleFunc("/api/v1/supplies", suppliesHandler.UpdateSupplies).Methods("PUT")
 
-	log.Println("Server starting at :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Println("Server starting at :8888")
+	log.Fatal(http.ListenAndServe(":8888", r))
 }
