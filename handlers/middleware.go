@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"github.com/GDG-on-Campus-KHU/SC4_BE/auth"
@@ -33,7 +34,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		//log.Printf("User ID: %d", claims.UserID)
 		ctx := context.WithValue(r.Context(), "userID", claims.UserID)
 		ctx = context.WithValue(ctx, "username", claims.Name)
-		//log.Printf("Context:", ctx)
+		log.Printf("Context:", ctx)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -44,8 +45,11 @@ func CORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 			origin := r.Header.Get("Origin")
 			allowed := false
 
+			log.Printf("CORS Request from Origin: %s", origin)
+
 			// 요청의 Origin이 허용된 출처인지 확인
 			for _, o := range allowedOrigins {
+
 				if o == origin {
 					allowed = true
 					break
@@ -56,6 +60,8 @@ func CORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			} else {
+				log.Printf("CORS Denied for Origin: %s", origin)
 			}
 
 			// Preflight 요청 처리

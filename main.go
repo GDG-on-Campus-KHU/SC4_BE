@@ -36,6 +36,7 @@ func main() {
 	suppliesHandler := handlers.NewSuppliesHandler(suppliesService, cfg)
 
 	//api
+	r.Use(handlers.CORSMiddleware(allowedOrigins))
 	r.HandleFunc("/api/login", userHandler.LoginUser).Methods("POST")
 	r.HandleFunc("/api/register", userHandler.CreateUser).Methods("POST")
 
@@ -49,8 +50,8 @@ func main() {
 	protected.HandleFunc("/supplies", suppliesHandler.UpdateSupplies).Methods("PUT")
 	//JWT 적용전
 	//r.HandleFunc("/api/v1/user", suppliesHandler.GetSupplies).Methods("GET")
-	r.HandleFunc("/api/v1/supplies", suppliesHandler.SaveSupplies).Methods("POST")
-	r.HandleFunc("/api/v1/supplies", suppliesHandler.UpdateSupplies).Methods("PUT")
+	// r.HandleFunc("/api/v1/supplies", suppliesHandler.SaveSupplies).Methods("POST")
+	// r.HandleFunc("/api/v1/supplies", suppliesHandler.UpdateSupplies).Methods("PUT")
 
 	log.Println("Server starting at :8888")
 	log.Fatal(http.ListenAndServe(":8888", r))
