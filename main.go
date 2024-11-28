@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 
 	"github.com/GDG-on-Campus-KHU/SC4_BE/config"
 	"github.com/GDG-on-Campus-KHU/SC4_BE/db"
@@ -21,13 +22,15 @@ func main() {
 	}
 	defer db.DB.Close()
 
-	// CORS 허용 출처
-	allowedOrigins := []string{
-		"https://packmate-three.vercel.app",
-		"http://localhost:5173",
-	}
-
+	// c:= cors.New(cors.Options{
+	// 	AllowedOrigins: []string{
+	// 		"https://packmate-three.vercel.app",
+	// 		"http://localhost:5173",
+	// 		"http://localhost:5500",
+	// 	},
+	// 	AllowCredentials: true,
 	r := mux.NewRouter()
+	c := cors.Default()
 
 	userService := &services.UserService{}
 	userHandler := handlers.NewUserHandler(userService)
@@ -36,14 +39,14 @@ func main() {
 	suppliesHandler := handlers.NewSuppliesHandler(suppliesService, cfg)
 
 	//api
-	r.Use(handlers.CORSMiddleware(allowedOrigins))
+
 	r.HandleFunc("/api/login", userHandler.LoginUser).Methods("POST")
 	r.HandleFunc("/api/register", userHandler.CreateUser).Methods("POST")
 
 	//JWT 적용후
 	protected := r.PathPrefix("/api/v1").Subrouter()
 	protected.Use(handlers.AuthMiddleware)
-	protected.Use(handlers.CORSMiddleware(allowedOrigins))
+	//protected.Use(handlers.CORSMiddleware(allowedOrigins))
 
 	protected.HandleFunc("/user", suppliesHandler.GetSupplies).Methods("GET")
 	protected.HandleFunc("/supplies", suppliesHandler.SaveSupplies).Methods("POST")
@@ -54,5 +57,5 @@ func main() {
 	// r.HandleFunc("/api/v1/supplies", suppliesHandler.UpdateSupplies).Methods("PUT")
 
 	log.Println("Server starting at :8888")
-	log.Fatal(http.ListenAndServe(":8888", r))
+	log.Fatal(http.ListenAndServe(":8888", c.Handler(r)))
 }
