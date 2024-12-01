@@ -50,7 +50,12 @@ func (s *UserService) LoginUser(l *models.LoginData) (*models.User, error) {
 
 func (s *UserService) CreateUser(u *models.User) error {
 	var existingID int
-	err := db.DB.QueryRow("SELECT id FROM users WHERE username = ?", u.Name).Scan(&existingID)
+	tx, err := db.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	err = tx.QueryRow("SELECT id FROM users WHERE username = ?", u.Name).Scan(&existingID)
 	if err == nil || existingID != 0 {
 		return fmt.Errorf("email already exists")
 	}
@@ -61,7 +66,7 @@ func (s *UserService) CreateUser(u *models.User) error {
 	}
 	u.Password = hashedPassword
 
-	result, err := db.DB.Exec(`
+	result, err := tx.Exec(`
         INSERT INTO users (username, password)  
         VALUES (?, ?)`,
 		u.Name, u.Password)
@@ -71,7 +76,7 @@ func (s *UserService) CreateUser(u *models.User) error {
 	id, _ := result.LastInsertId()
 	u.ID = id
 
-	err = db.DB.QueryRow("SELECT id, username FROM users WHERE id = ?", id).
+	err = tx.QueryRow("SELECT id, username FROM users WHERE id = ?", id).
 		Scan(
 			&u.ID,
 			&u.Name,
@@ -80,7 +85,7 @@ func (s *UserService) CreateUser(u *models.User) error {
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (s *UserService) GetUser(id int64) (*models.User, error) {

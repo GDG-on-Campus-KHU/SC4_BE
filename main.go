@@ -30,7 +30,7 @@ func main() {
 	// 	},
 	// 	AllowCredentials: true,
 	r := mux.NewRouter()
-	c := cors.Default()
+	c := cors.AllowAll()
 
 	userService := &services.UserService{}
 	userHandler := handlers.NewUserHandler(userService)
